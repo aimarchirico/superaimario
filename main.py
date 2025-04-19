@@ -531,6 +531,14 @@ class Spill():
         self.spiller.liv.verdi = 3
         self.score.verdi = 0
         self.resettElementer(True)
+
+        # Resett spilleren
+        self.spiller.x = 50.0
+        self.spiller.y = float(self.vinduhoyde / 2)
+        self.spiller.hastighet_y = 0.0
+        self.spiller.boks.x = int(self.spiller.x)
+        self.spiller.boks.y = int(self.spiller.y)
+
         self.visStartvindu()
         pygame.display.flip()
         self.klokke.tick(60)
