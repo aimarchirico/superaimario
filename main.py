@@ -1,12 +1,27 @@
+# SUPER AIMARIO
+
+# Importerer biblioteker
+
 import asyncio
 import pygame
 import random
 from pygame.locals import (K_SPACE, K_LEFT, K_RIGHT, K_a, K_d, K_l, K_i, K_ESCAPE, QUIT)
 import csv
-import sys
 
+# Definer infotekstklassen
 class Info():
+    """ 
+    Klasse for å lage info-objekt 
+    
+    Parametre:
+    spillobjekt (Spill): tilhørende spillobjekt
+    x (int): x-verdien til objektet
+    y (int): y-verdien til objektet
+    type (str): typen info
+    """
+
     def __init__(self, spillobjekt, x, y, type):
+        """ Konstruktør """
         self.spillobjekt = spillobjekt
         self.x = x
         self.y = y
@@ -14,18 +29,29 @@ class Info():
         self.hoyde = 10
         self.type = type
         self.verdi = 0
-        try: # Keep basic error handling
-            self.font = pygame.font.Font("filer/PressStart2P.ttf", 20)
-        except pygame.error:
-             self.font = pygame.font.Font(None, 30) # Fallback
-
+        self.font = pygame.font.Font("filer/PressStart2P.ttf", 20)
 
     def vis(self):
+        """ Metode for å tegne infoen """
         score_tekst = self.font.render(self.type+": "+str(round(self.verdi)), True, (255, 255, 255))
         self.spillobjekt.vindu.blit(score_tekst, (self.x, self.y))
 
+# Definer gjenstand-klassen
 class Gjenstand():
+    """ 
+    Klasse for å lage ulike gjenstander i miljøet 
+    
+    Parametre:
+    spillobjekt (Spill): tilhørende spillobjekt
+    x (int): x-verdien til objektet
+    y (int): y-verdien til objektet
+    bredde (int): bredden til objektet
+    hoyde (int): høyden til objektet
+    liste (list): det tilhørende spillobjektets liste over gjenstandene
+    """
+
     def __init__(self,  spillobjekt, x, y, bredde, hoyde, liste):
+        """ Konstruktør """
         self.spillobjekt = spillobjekt
         self.x = x
         self.y = y
@@ -36,15 +62,25 @@ class Gjenstand():
         self.liste = liste
 
     def beveg(self):
+        """ Metode for å bevege gjenstanden """
         if (self.spillobjekt.taster[K_RIGHT] or self.spillobjekt.taster[K_d]) and self.spillobjekt.spiller.x >= self.spillobjekt.vindubredde / 2:
             self.x -= self.hastighet
         if self.x < -self.bredde:
-            if self in self.liste:
-                 self.liste.remove(self)
+            self.liste.remove(self)      
         self.boks.x = self.x
 
+# Definer Sky-klassen
 class Sky(Gjenstand):
+    """ 
+    Klasse for å lage sky-objekt 
+    
+    Parametre:
+    spillobjekt (Spill): tilhørende spillobjekt
+    x (int): x-verdien til objektet
+    """
+
     def __init__(self, spillobjekt, x):
+        """ Konstruktør """
         super().__init__(spillobjekt, x, random.randint(0, spillobjekt.vinduhoyde // 3), 100, 50, spillobjekt.skyer)
         self.bilder = []
         for n in range(3):
@@ -52,10 +88,21 @@ class Sky(Gjenstand):
         self.bilde = self.bilder[random.randint(0, len(self.bilder) - 1)]
 
     def vis(self):
+        """ Metode for å tegne skyen """
         self.spillobjekt.vindu.blit(self.bilde, (self.x, self.y))
 
+# Definer Busk-klassen
 class Busk(Gjenstand):
+    """ 
+    Klasse for å lage busk-objekt 
+    
+    Parametre:
+    spillobjekt (Spill): tilhørende spillobjekt
+    plattformobjekt (Plattform): tilhørende plattformobjekt
+    """
+
     def __init__(self, spillobjekt, plattformobjekt):
+        """ Konstruktør """
         bredde = 80
         hoyde = 40
         self.plattformobjekt = plattformobjekt
@@ -67,10 +114,22 @@ class Busk(Gjenstand):
         self.bilde = self.bilder[random.randint(0, len(self.bilder) - 1)]
 
     def vis(self):
+        """ Metode for å tegne busken """
         self.spillobjekt.vindu.blit(self.bilde, (self.x, self.y))
 
+# Definer Plattform-klasse
 class Plattform(Gjenstand):
+    """ 
+    Klasse for å lage plattform-objekt 
+
+    Parametre:
+    spillobjekt (Spill): tilhørende spillobjekt
+    x (int): x-verdien til objektet
+    bredde (int): bredden til objektet
+    """
+
     def __init__(self, spillobjekt, x, bredde):
+        """ Konstruktør """
         hoyde = random.randint(60, 150)
         super().__init__(spillobjekt, x, spillobjekt.vinduhoyde - hoyde, bredde, hoyde, spillobjekt.plattformer)
         self.farge = (200, 200, 50)
@@ -78,18 +137,28 @@ class Plattform(Gjenstand):
         self.kantfarge = (0, 0, 0)
 
     def vis(self):
+        """ Metode for å tegne plattformen """
         pygame.draw.rect(self.spillobjekt.vindu, self.farge, (self.x, self.y, self.bredde, self.hoyde), 0)
         pygame.draw.rect(self.spillobjekt.vindu, self.andrefarge, (self.x, self.y, self.bredde, self.hoyde), 13)
         pygame.draw.rect(self.spillobjekt.vindu, self.kantfarge, (self.x, self.y, self.bredde, self.hoyde), 3)
 
     def opprettElementer(self):
+        """ Metode for å opprette skurker og busker på plattformen """
         for i in range (random.randint(0, round(self.bredde / 300))):
             self.spillobjekt.skurker.append(Skurk(self.spillobjekt, self, self.spillobjekt.skurker))
         for i in range (random.randint(0, round(self.bredde / 100))):
             self.spillobjekt.busker.append(Busk(self.spillobjekt, self))
 
+# Definer spillerklassen
 class Spiller():
+    """ 
+    Klasse for å lage spiller-objekt 
+
+    Parametre:
+    spillobjekt (Spill): tilhørende spillobjekt
+    """
     def __init__(self,spillobjekt):
+        """ Konstruktør """
         self.spillobjekt = spillobjekt
         self.x = 50.0
         self.y = float(spillobjekt.vinduhoyde / 2)
@@ -100,9 +169,7 @@ class Spiller():
         self.hastighet_y = 0.0
         self.bilder = []
         for n in range(11):
-            try: # Keep basic error handling
-                self.bilder.append(pygame.transform.scale(pygame.image.load("bilder/spiller"+str(n)+".png").convert_alpha(), (self.bredde, self.hoyde)))
-            except pygame.error: pass # Ignore missing images
+            self.bilder.append(pygame.transform.scale(pygame.image.load("bilder/spiller"+str(n)+".png").convert_alpha(), (self.bredde, self.hoyde)))
         self.bilder_revers = []
         for bilde in self.bilder:
             self.bilder_revers.append(pygame.transform.flip(bilde,True,False))
@@ -110,15 +177,19 @@ class Spiller():
         self.bildenr = 0
         self.drept_lyd = pygame.mixer.Sound("lydfiler/wilhelm_scream.ogg")
         self.animasjon_tid = pygame.time.get_ticks()
-        self.animasjon_intervall = 50
         self.drept = False
         self.liv = Info(spillobjekt, 350, 10, "Liv")
         self.liv.verdi = 3
 
     def beveg(self):
+        """ Metode for å bevege spilleren """
+
+        # Bevegelse til venstre
         if self.spillobjekt.taster[K_LEFT] or self.spillobjekt.taster[K_a]:
             self.x -= self.hastighet_x
             self.animasjon(False)
+
+        # Bevegelse til høyre
         elif (self.spillobjekt.taster[K_RIGHT] or self.spillobjekt.taster[K_d]):
             if self.x < self.spillobjekt.vindubredde / 2:
                 self.x += self.hastighet_x
@@ -126,22 +197,21 @@ class Spiller():
         if self.x < 0:
             self.x = 0
 
-        on_ground_simple = self.hastighet_y == 0
-        if self.spillobjekt.taster[K_SPACE] and on_ground_simple:
+        # Vertikal bevegelse med tyngdekraft
+        if self.spillobjekt.taster[K_SPACE] and self.hastighet_y == 0:
             self.hastighet_y = -12.0
         self.hastighet_y += 0.7
         self.hastighet_y = min(12.0, self.hastighet_y)
         self.y += self.hastighet_y
-
         self.boks.x = int(self.x)
         self.boks.y = int(self.y)
-
-        if self.y > self.spillobjekt.vinduhoyde:
+        if self.y > self.spillobjekt.vinduhoyde - self.hoyde:
             self.drept = True
 
+        # Kollisjon med plattform
         for plattform in self.spillobjekt.plattformer:
             if self.boks.colliderect(plattform.boks):
-                if self.hastighet_y > 0 and self.boks.bottom <= plattform.boks.top + 25:
+                if self.boks.bottom <= plattform.boks.top + 25 and self.hastighet_y > 0:
                     self.y = float(plattform.y - self.hoyde)
                     self.hastighet_y = 0.0
                     self.boks.y = int(self.y)
@@ -165,20 +235,17 @@ class Spiller():
 
 
     def vis(self):
-        # Drawing logic ONLY, no respawn trigger
-        if self.bildeliste and len(self.bildeliste) > self.bildenr:
-            # Use dead sprite visual if flag is set, otherwise normal anim
-            sprite_index = 10 if self.drept and len(self.bilder) > 10 else self.bildenr
-            # Ensure index is valid before drawing
-            if sprite_index < len(self.bildeliste):
-                 self.spillobjekt.vindu.blit(self.bildeliste[sprite_index], (self.x, self.y))
+        """ Metode for å tegne spilleren """
+        sprite_index = len(self.bildeliste) - 1 if self.drept else self.bildenr
+        self.spillobjekt.vindu.blit(self.bildeliste[sprite_index], (self.x, self.y))
 
 
     def animasjon(self,retning_hoyre):
-        if pygame.time.get_ticks() - self.animasjon_tid > self.animasjon_intervall:
+        """ Metode for å animere spilleren """
+        if pygame.time.get_ticks() - self.animasjon_tid > 50:
             self.animasjon_tid = pygame.time.get_ticks()
             self.bildenr += 1
-            if self.bildenr >= 10:
+            if self.bildenr == len(self.bildeliste) - 1:
                 self.bildenr = 0
             if retning_hoyre:
                 self.bildeliste = self.bilder
@@ -186,22 +253,33 @@ class Spiller():
                 self.bildeliste = self.bilder_revers
 
     def respawn(self):
-        # Modified respawn logic
+        """ Metode for å respawne """
+
+        self.drept_lyd.play()
+
+        # Game Over
         if self.liv.verdi <= 1:
-            # Signal game over to the main game object
-            self.spillobjekt.trigger_game_over()
+            self.spillobjekt.gameOver()
         else:
-            # Reset level and player state for respawn
-            self.spillobjekt.reset_level_elements() # Separate method in Spill
-            self.drept_lyd.play()
+            self.spillobjekt.resettElementer()
             self.y = float(self.spillobjekt.vinduhoyde / 2)
             self.x = 50.0
             self.hastighet_y = 0.0
             self.liv.verdi -= 1
-            self.drept = False # Reset flag after handling
+            self.drept = False
 
 class Skurk():
+    """ 
+    Klasse for å lage skurk-objekt 
+
+    Parametre:
+    spillobjekt (Spill): tilhørende spillobjekt
+    plattformobjekt (Plattform): tilhørende plattformobjekt
+    liste (liste): det tilhørende spillobjektets liste over skurkene
+    """
+
     def __init__(self, spillobjekt, plattformobjekt, liste):
+        """ Konstruktør """
         self.spillobjekt = spillobjekt
         self.plattformobjekt = plattformobjekt
         self.bredde = 60
@@ -213,10 +291,8 @@ class Skurk():
         self.hastighet_abs = 1.0 + spillobjekt.score.verdi / 2000.0
         self.hastighet = self.hastighet_abs
         self.bilder = []
-        try: # Keep basic error handling
-            for n in range(11):
-                self.bilder.append(pygame.transform.scale(pygame.image.load("bilder/skurk"+str(n)+".png").convert_alpha(), (self.bredde, self.hoyde)))
-        except pygame.error: pass
+        for n in range(11):
+            self.bilder.append(pygame.transform.scale(pygame.image.load("bilder/skurk"+str(n)+".png").convert_alpha(), (self.bredde, self.hoyde)))
         self.bilder_revers = []
         for bilde in self.bilder:
             self.bilder_revers.append(pygame.transform.flip(bilde,True,False))
@@ -224,29 +300,30 @@ class Skurk():
         self.bildenr = 0
         self.drept_lyd = pygame.mixer.Sound("lydfiler/minecraft_scream.ogg")
         self.animasjon_tid = pygame.time.get_ticks()
-        self.animasjon_intervall = 100
         self.drept_tid = 0
+        self.lyd_spilt = False
         self.liste = liste
 
     def beveg(self):
+        """ Metode for å bevege skurken """
         if self.drept_tid > 0:
             self.hastighet = 0
             return
 
-        scroll_speed = 0
+        # Bevegelse i forhold til spilleren
         if (self.spillobjekt.taster[K_RIGHT] or self.spillobjekt.taster[K_d]) and self.spillobjekt.spiller.x >= self.spillobjekt.vindubredde / 2:
-            scroll_speed = self.spillobjekt.spiller.hastighet_x
-
-        self.x -= (self.hastighet + scroll_speed)
+            self.x -= (self.hastighet + self.spillobjekt.spiller.hastighet_x)
+        else: 
+            self.x -= self.hastighet
         self.animasjon()
 
+        # Snur farten på enden av plattformen
         if self.x <= self.plattformobjekt.x:
-            self.x = float(self.plattformobjekt.x)
             self.hastighet = -self.hastighet_abs
         elif self.x >= self.plattformobjekt.x + self.plattformobjekt.bredde - self.bredde:
-            self.x = float(self.plattformobjekt.x + self.plattformobjekt.bredde - self.bredde)
             self.hastighet = self.hastighet_abs
 
+        # Fjerner skurken når den er utilgjengelig
         if self.x < -self.spillobjekt.vindubredde:
              if self in self.liste:
                  self.liste.remove(self)
@@ -255,10 +332,11 @@ class Skurk():
         self.boks.y = int(self.y)
 
     def animasjon(self):
-         if pygame.time.get_ticks() - self.animasjon_tid > self.animasjon_intervall:
+         """ Metode for å animere skurken """
+         if pygame.time.get_ticks() - self.animasjon_tid > 50:
               self.animasjon_tid = pygame.time.get_ticks()
               self.bildenr += 1
-              if self.bildenr >= 10:
+              if self.bildenr >= len(self.bildeliste) - 1:
                    self.bildenr = 0
               if self.hastighet > 0:
                    self.bildeliste = self.bilder_revers
@@ -266,30 +344,43 @@ class Skurk():
                    self.bildeliste = self.bilder
 
     def vis(self):
-        # Original vis logic including removal
+        """ Metode for å tegne skurken """
+
+        # Sjekker om skurken er drept
         if self.drept_tid > 0:
-            self.drept_lyd.play()
-            if len(self.bilder) > 10:
-                 self.spillobjekt.vindu.blit(self.bilder[10], (self.x, self.y))
+            if not self.lyd_spilt:
+                self.drept_lyd.play()
+                self.lyd_spilt = True
+            self.spillobjekt.vindu.blit(self.bilder[10], (self.x, self.y))
             if pygame.time.get_ticks() - self.drept_tid > 200:
                 self.spillobjekt.score.verdi += 100
-                if self in self.liste:
-                     self.liste.remove(self)
+                self.liste.remove(self)
+        
+        # Tegner normalt hvis ikke            
         else:
              if self.bildeliste and len(self.bildeliste) > self.bildenr:
                   self.spillobjekt.vindu.blit(self.bildeliste[self.bildenr], (self.x, self.y))
 
 class Spill():
-    def __init__(self, history = True):
+    """ 
+    Klasse for å lage spill-objekt 
+    """
+
+    def __init__(self):
+        """ Konstruktør """
+
+        # Starter opp Pygame
         pygame.init()
         pygame.display.set_caption("SUPER AIMARIO")
         pygame.mixer.init()
         pygame.mixer.music.load("lydfiler/wii.ogg")
 
-        self.history = history
+        # Lagrer variabler og oppretter elementer
         self.spill = False
         self.info = False
-        self.game_over = False # New flag for game over state
+        self.game_over = False
+        self.game_over_start_time = 0
+        self.spiller_musikk = False
         self.vindubredde = 800
         self.vinduhoyde = 600
         self.vindu = pygame.display.set_mode((self.vindubredde, self.vinduhoyde))
@@ -302,10 +393,11 @@ class Spill():
         self.skyer = []
         self.busker = []
         self.plattformer = []
-        self.reset_level_elements(True) # Initial population
+        self.resettElementer(True)
         self.taster = pygame.key.get_pressed()
 
-    def reset_level_elements(self, initial=False):
+    def resettElementer(self, initial=False):
+         """ Metode for å resette elementer """
          self.skurker.clear()
          self.skyer.clear()
          self.busker.clear()
@@ -315,63 +407,47 @@ class Spill():
          plattform = Plattform(self, 0, self.vindubredde)
          self.plattformer.append(plattform)
          plattform.opprettElementer()
-         # Reset score/time only on full game reset, not just respawn level reset
-         if not initial and self.game_over: # Check if called from game over reset
+         if not initial and self.game_over:
               self.score.verdi = 0
               self.tid.verdi = 0
               self.starttid = pygame.time.get_ticks()
 
-    def reset_game(self):
-         # Reset all game state for a new game
-         self.spill = True
-         self.info = False
-         self.game_over = False
-         self.score.verdi = 0
-         self.tid.verdi = 0
-         self.starttid = pygame.time.get_ticks()
-         self.spiller = Spiller(self) # Create new player with full lives
-         self.reset_level_elements(False) # Reset elements
-
-    def trigger_game_over(self):
+    def gameOver(self):
+         """ Metode for å håndtere game over """
          self.game_over = True
-         self.spill = False # Stop active gameplay
-         # Attempt score saving
-         try:
-              with open("filer/score.csv", "a", encoding="utf-8", newline="") as fil:
-                   csv.writer(fil).writerow([round(self.tid.verdi),round(self.score.verdi)])
-         except Exception as e: print(f"Game Over score save error: {e}")
+         self.game_over_start_time = pygame.time.get_ticks()
+         self.spill = False
+         with open("filer/score.csv", "a", encoding="utf-8", newline="") as fil:
+            csv.writer(fil).writerow([round(self.tid.verdi),round(self.score.verdi)])
 
 
     def visStartvindu(self):
+        """ Metode for å vise startvindu """
+
+        # Hent data fra csv-fil
         tid_verdier = []
         score_verdier = [0]
-        try:
-            with open("filer/score.csv", encoding="utf-8") as fil:
-                filinnhold = csv.reader(fil, delimiter=",")
-                next(filinnhold)
-                for rad in filinnhold:
-                     if len(rad) >= 2:
-                          try:
-                               tid_verdier.append(rad[0])
-                               score_verdier.append(int(rad[1]))
-                          except ValueError: continue
-                score = score_verdier[-1] if score_verdier else 0
-                high_score = max(score_verdier) if score_verdier else 0
-        except (FileNotFoundError, StopIteration): score, high_score = 0, 0
-        except Exception: score, high_score = 0, 0 # Catch other errors
+        with open("filer/score.csv", encoding="utf-8") as fil:
+            filinnhold = csv.reader(fil, delimiter=",")
+            next(filinnhold)
+            for rad in filinnhold:
+                tid_verdier.append(rad[0])
+                score_verdier.append(int(rad[1]))
+        score = score_verdier[-1] if score_verdier else 0
+        high_score = max(score_verdier) if score_verdier else 0
 
-        # State check moved to spillLokke
-
+        # Opprett tekst
         tittel_font = pygame.font.Font("filer/PressStart2P.ttf", 70)
         stor_font = pygame.font.Font("filer/PressStart2P.ttf", 20)
         liten_font = pygame.font.Font("filer/PressStart2P.ttf", 15)
         super_tekst = tittel_font.render("SUPER", True, (255, 255, 100))
         aimario_tekst = tittel_font.render("AIMARIO", True, (255, 255, 100))
-        start_tekst = stor_font.render("Trykk SPACE for å starte", True, (255, 255, 255)) # aa for å
+        start_tekst = stor_font.render("Trykk SPACE for å starte", True, (255, 255, 255))
         high_score_tekst = liten_font.render("High score: "+str(high_score), True, (255, 255, 255))
         score_tekst = liten_font.render("Siste score: "+str(score), True, (255, 255, 255))
         info_tekst = liten_font.render("Info (Trykk I)", True, (255, 255, 255))
 
+        # Opprett tekstboks
         super_boks = super_tekst.get_rect(center=(self.vindubredde / 2, 100))
         aimario_boks = aimario_tekst.get_rect(center=(self.vindubredde / 2, 200))
         start_boks = start_tekst.get_rect(center=(self.vindubredde / 2, self.vinduhoyde / 2))
@@ -379,6 +455,7 @@ class Spill():
         score_boks = score_tekst.get_rect(center=(self.vindubredde / 2, 450))
         info_boks = info_tekst.get_rect(center=(self.vindubredde / 2, 500))
 
+        # Tegn tekstboks på vinduet
         self.vindu.fill((100, 150, 200))
         self.vindu.blit(super_tekst, super_boks)
         self.vindu.blit(aimario_tekst, aimario_boks)
@@ -387,20 +464,23 @@ class Spill():
         self.vindu.blit(score_tekst, score_boks)
         self.vindu.blit(info_tekst, info_boks)
 
-    def visInfo(self):
-        # State check moved to spillLokke
+    def visInfo(self):  
+        """ Metode for å vise info-vinduet """
 
+        # Opprett tekst
         font = pygame.font.Font("filer/PressStart2P.ttf", 15)
         beveg_tekst = font.render("AD/piltaster og SPACE for å bevege", True, (255, 255, 255))
         dod_tekst = font.render("Ikke treff skurkene eller fall ned", True, (255, 255, 255))
         poeng_tekst = font.render("Land oppå skurkene for 100 poeng", True, (255, 255, 255))
         lukk_tekst = font.render("Trykk ESC for å lukke infovinduet", True, (255, 255, 255))
 
+        # Opprett tekstboks
         beveg_boks = beveg_tekst.get_rect(center=(self.vindubredde / 2, 100))
         dod_boks = dod_tekst.get_rect(center=(self.vindubredde / 2, 200))
         poeng_boks = poeng_tekst.get_rect(center=(self.vindubredde / 2, 300))
         lukk_boks = lukk_tekst.get_rect(center=(self.vindubredde / 2, 500))
 
+        # Tegn tekstboks på vinduet
         self.vindu.fill((100, 150, 200))
         self.vindu.blit(beveg_tekst, beveg_boks)
         self.vindu.blit(dod_tekst, dod_boks)
@@ -408,94 +488,111 @@ class Spill():
         self.vindu.blit(lukk_tekst, lukk_boks)
 
     def visGameOver(self):
-         # Draws the game over screen
+         """ Metode for å vise game over-vinduet """
+
+        # Vis Game Over
          self.vindu.fill((0, 0, 0))
          font_large = pygame.font.Font("filer/PressStart2P.ttf", 100)
-         font_small = pygame.font.Font("filer/PressStart2P.ttf", 20)
          game_tekst = font_large.render("GAME", True, (255, 255, 255))
          over_tekst = font_large.render("OVER", True, (255, 255, 255))
-         restart_tekst = font_small.render("Trykk SPACE for å prove igjen", True, (255, 255, 255)) # aa for å
-
          game_boks = game_tekst.get_rect(center=(self.vindubredde / 2, 250))
          over_boks = over_tekst.get_rect(center=(self.vindubredde / 2, 350))
-         restart_boks = restart_tekst.get_rect(center=(self.vindubredde / 2, 500))
-
          self.vindu.blit(game_tekst, game_boks)
          self.vindu.blit(over_tekst, over_boks)
-         self.vindu.blit(restart_tekst, restart_boks)
 
 
     def opprettElementer(self):
+        """ Metode for å opprette nye elementer når spilleren beveger seg """
         if (self.taster[K_RIGHT] or self.taster[K_d]) and self.spiller.x >= self.vindubredde / 2:
             if random.randint(1, 20) == 1:
                 self.skyer.append(Sky(self, self.vindubredde))
-            if self.plattformer:
-                 if self.vindubredde - (self.plattformer[-1].x + self.plattformer[-1].bredde) > 130:
+            if self.vindubredde - (self.plattformer[-1].x + self.plattformer[-1].bredde) > 130:
                      plattform = Plattform(self, self.vindubredde, random.randint(100, 1000))
                      self.plattformer.append(plattform)
                      plattform.opprettElementer()
-            # Keep original score logic
             self.score.verdi += 1/10
 
     def kjorRunde(self):
+        """ Metode for å kjøre runden """
+
+        # Oppdater spiller og miljø
         self.tid.verdi = round((pygame.time.get_ticks() - self.starttid) / 1000)
         self.spiller.beveg()
-        # Keep original iteration
         for skurk in self.skurker: skurk.beveg()
         for sky in self.skyer: sky.beveg()
         for busk in self.busker: busk.beveg()
         for plattform in self.plattformer: plattform.beveg()
         self.opprettElementer()
 
-        # Drawing happens in spillLokke now based on state
+    async def resettSpill(self):
+        """ Metode for å resette spillet """
+        self.game_over = False
+        self.spiller.drept = False
+        self.spiller.liv.verdi = 3
+        self.score.verdi = 0
+        self.resettElementer(True)
+        self.visStartvindu()
+        pygame.display.flip()
+        self.klokke.tick(60)
+        await asyncio.sleep(0)
 
     async def spillLokke(self):
+        """ Metode for å kjøre spillet """
+
+        # Start hovedløkke
         while True:
+
+            # Avslutter hvis vinduet lukkes
             for hendelse in pygame.event.get():
                 if hendelse.type == QUIT:
                     pygame.quit()
-                    exit() # Keep original exit
+                    exit()
 
+            # Sjekker om spilleren har startet spillet
             self.taster = pygame.key.get_pressed()
 
-            # --- Handle Input and State Changes First ---
+            # Game Over
             if self.game_over:
+                if self.spiller_musikk:
+                    pygame.mixer.music.stop() 
+                    self.spiller_musikk = False
+                current_time = pygame.time.get_ticks()
+                if current_time - self.game_over_start_time < 3000:
+                    self.visGameOver()
+                    pygame.display.flip()
+                    self.klokke.tick(60)
+                    await asyncio.sleep(0)
+                    continue
+                else:
+                    await self.resettSpill()
+                    continue
+
+            # Start-vindu
+            if not self.spill and not self.info:
                 if self.taster[K_SPACE]:
-                    self.reset_game() # Reset the game state
-                elif self.taster[K_ESCAPE]:
-                    self.spill = False
+                    if not self.spiller_musikk:
+                        pygame.mixer.music.play(-1)
+                        self.spiller_musikk = True
+                    self.spill = True
                     self.info = False
                     self.game_over = False
-            elif not self.spill and not self.info: # Start Screen
-                if self.taster[K_SPACE]:
-                    self.spill = True
-                    pygame.mixer.music.play(-1) 
-                    self.info = False
-                    self.game_over = False # Ensure game over is false
                     self.starttid = pygame.time.get_ticks()
                 elif self.taster[K_i]:
                     self.info = True
-            elif self.info: # Info Screen
+            
+            # Info-vindu
+            elif self.info: 
                 if self.taster[K_ESCAPE]:
                     self.info = False
-            elif self.spill: # Gameplay Screen
-                if self.taster[K_ESCAPE]: # Option to return to menu
-                     self.spill = False
-                     self.info = False
-                     self.game_over = False
 
-
-            # --- Update Game Logic if Active ---
+            # Oppdater spill-logikk
             if self.spill:
-                self.kjorRunde() # Update positions, handle movement etc.
-                if self.spiller.drept: # Check for death AFTER update
-                    self.spiller.respawn() # Call modified respawn (sets game_over or resets state)
+                self.kjorRunde()
+                if self.spiller.drept:
+                    self.spiller.respawn()
 
-            # --- Draw Current State ---
-            if self.game_over:
-                self.visGameOver()
-            elif self.spill:
-                # Drawing previously done in kjorRunde, needs to be here
+            # Tegn elementer
+            if self.spill:
                 self.vindu.fill((100, 150, 200))
                 self.score.vis()
                 self.spiller.liv.vis()
@@ -504,28 +601,28 @@ class Spill():
                 for busk in self.busker: busk.vis()
                 for plattform in self.plattformer: plattform.vis()
                 for skurk in self.skurker: skurk.vis()
-                self.spiller.vis() # Draws player (including potentially dead sprite briefly)
+                self.spiller.vis()
             elif self.info:
                 self.visInfo()
-            else: # Start screen
+            else:
                 self.visStartvindu()
 
+            # Oppdater vindu og begrens hastighet
             pygame.display.flip()
             self.klokke.tick(60)
             await asyncio.sleep(0)
 
 
 async def run_game():
-    spill_instance = Spill()
+    spill = Spill()
     try:
-        await spill_instance.spillLokke()
+        await spill.spillLokke()
     except Exception as e:
-        print(f"Error during game loop: {e}")
-        try: # Attempt cleanup even on error
+        print(f"Feil i spilløkken: {e}")
+        try: 
              pygame.quit()
-        except: pass # Ignore errors during cleanup
+        except: pass
 
 
 if __name__ == "__main__":
-    import asyncio # Ensure imported here
     asyncio.run(run_game())
