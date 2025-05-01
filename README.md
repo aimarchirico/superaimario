@@ -9,7 +9,7 @@ Kjør main.py for å starte spillet lokalt.
 ### Nettleser: 
 Nettversjonen er kompilert med Pygbag, som konverterer Python-kode til WebAssembly.
 
-Besøk [sa.chirico.no](https://sa.chirico.no) for å spille i nettleseren eller kompiler lokal klient med `python -m pygbag --git .` som kan kjøres fra [localhost:8000](localhost:8000). 
+Besøk [chirico.no/superaimario](https://chirico.no/superaimario) for å spille i nettleseren eller kompiler lokal klient med `python -m pygbag --git .` som kan kjøres fra [localhost:8000](localhost:8000). 
 
 ## Spillfunksjoner
 - Klassisk plattformspill med sideveis rulling
