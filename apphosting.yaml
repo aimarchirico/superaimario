@@ -1,0 +1,3 @@
+scripts:
+  buildCommand: python -m pygbag --git --archive
+  runCommand: npx serve build/web
