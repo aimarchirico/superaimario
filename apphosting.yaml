@@ -1,3 +1,7 @@
 # Define the build process
-  scripts:
+scripts:
   buildCommand: python -m pygbag --git --archive .
+
+outputFiles:
+  serverApp:
+    include: [build/web]
