@@ -1,3 +1,0 @@
-# Define the build process
-  scripts:
-  buildCommand: python -m pygbag --git --archive .
