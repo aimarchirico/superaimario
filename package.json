@@ -1,0 +1,13 @@
+{
+  "name": "superaimario",
+  "version": "1.0.0",
+  "description": "Super Aimario Game",
+  "scripts": {
+    "build": "python -m pygbag --git --archive .",
+    "start": "npx serve build/web"
+  },
+  "engines": {
+    "node": "16"
+  },
+  "private": true
+}
