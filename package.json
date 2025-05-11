@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "description": "Super Aimario Game",
   "scripts": {
-    "build": "echo 'Using pre-built files'",
+    "build": "python -m pygbag --build .",
+    "build:prebuilt": "echo 'Using pre-built files'",
     "start": "npx serve build/web"
   },
   "engines": {
