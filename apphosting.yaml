@@ -1,3 +1,0 @@
-scripts:
-  buildCommand: npm run build
-  runCommand: npm run start
